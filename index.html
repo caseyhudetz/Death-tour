@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="A self-guided walking tour of Chicago's most tragic — and transformative — moments in history.">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>Casey's Chicago Death Tour</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header id="app-header">
+    <div class="header-left">
+      <div class="flag-stars">
+        <span class="flag-star">&#10022;</span>
+        <span class="flag-star">&#10022;</span>
+        <span class="flag-star">&#10022;</span>
+        <span class="flag-star">&#10022;</span>
+      </div>
+      <div class="header-text">
+        <span class="header-title">Chicago Death Tour</span>
+        <span class="header-sub">by Casey Hudetz</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button id="btn-gps" class="icon-btn" title="Find my location" aria-label="Find my location">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          <path d="M12 2a10 10 0 1 0 10 10"/>
+        </svg>
+      </button>
+      <button id="btn-list" class="icon-btn" title="Stop list" aria-label="View all stops" onclick="toggleStopList()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Progress bar -->
+  <div id="progress-bar">
+    <div id="progress-fill"></div>
+    <div id="progress-stats">
+      <span id="stat-deaths">0 lives lost</span>
+      <span id="stat-reforms">0 reforms</span>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Stop list overlay -->
+  <div id="stop-list-overlay" class="hidden" onclick="if(event.target===this)toggleStopList()">
+    <div id="stop-list-panel">
+      <div class="panel-handle"></div>
+      <h2 class="stop-list-title">All Stops</h2>
+      <div id="stop-list-items"></div>
+    </div>
+  </div>
+
+  <!-- Story panel -->
+  <div id="story-panel" class="hidden">
+    <div class="panel-handle" onclick="closeStoryPanel()"></div>
+
+    <div id="story-content">
+      <!-- Populated by JS -->
+    </div>
+
+    <div id="story-nav">
+      <button id="btn-prev" class="nav-btn" onclick="navigateStop(-1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        <span>Prev</span>
+      </button>
+      <button id="btn-close-story" onclick="closeStoryPanel()">Close map</button>
+      <button id="btn-next" class="nav-btn nav-btn-right" onclick="navigateStop(1)">
+        <span>Next</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Near-stop toast -->
+  <div id="near-toast" class="hidden">
+    <div id="near-toast-inner">
+      <span id="near-toast-text">You're near Stop 1</span>
+      <button onclick="openNearStop()">Open</button>
+    </div>
+  </div>
+
+  <script src="js/stops.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

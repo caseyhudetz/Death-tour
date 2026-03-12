@@ -1,0 +1,837 @@
+/* Casey's Chicago Death Tour — Styles
+   Dark theme, mobile-first, Chicago flag accent colors
+   ─────────────────────────────────────────────────────── */
+
+/* ─── Variables ──────────────────────────────────────────── */
+:root {
+  --red:        #C60C30;
+  --red-dark:   #9b2226;
+  --blue:       #0077b6;
+  --blue-light: #00b4d8;
+  --dark:       #0a0a0a;
+  --card:       #141414;
+  --card2:      #1e1e1e;
+  --border:     #2a2a2a;
+  --text:       #e8e8e8;
+  --muted:      #888;
+  --gold:       #d4a017;
+  --green:      #2d6a4f;
+  --green-light:#40916c;
+
+  --header-h:   56px;
+  --progress-h: 36px;
+  --panel-radius: 16px;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--dark);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Header ─────────────────────────────────────────────── */
+#app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  z-index: 1000;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flag-stars {
+  display: flex;
+  gap: 3px;
+}
+
+.flag-star {
+  color: var(--red);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.header-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+.header-right {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-btn:hover {
+  background: var(--card2);
+  border-color: #444;
+}
+
+.icon-btn.gps-active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+/* ─── Progress Bar ──────────────────────────────────────── */
+#progress-bar {
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  height: var(--progress-h);
+  z-index: 999;
+  background: rgba(10,10,10,0.9);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+#progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--red-dark), var(--red));
+  width: 0%;
+  transition: width 0.6s ease;
+}
+
+#progress-stats {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+  margin-top: 3px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+#stat-deaths {
+  color: #c77;
+}
+
+#stat-reforms {
+  color: var(--green-light);
+}
+
+/* ─── Map ─────────────────────────────────────────────────── */
+#map {
+  position: fixed;
+  top: calc(var(--header-h) + var(--progress-h));
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+/* Leaflet overrides */
+.leaflet-control-zoom {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(14,14,14,0.92) !important;
+  color: var(--text) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--card2) !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(10,10,10,0.7) !important;
+  color: var(--muted) !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: var(--muted) !important;
+}
+
+/* ─── Stop Markers ───────────────────────────────────────── */
+.stop-marker {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--marker-color, var(--red));
+  border: 2px solid rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.stop-marker:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.7);
+  border-color: rgba(255,255,255,0.6);
+}
+
+.stop-marker--active {
+  transform: scale(1.2);
+  border-color: #fff;
+  box-shadow: 0 0 0 4px rgba(198, 12, 48, 0.35), 0 4px 16px rgba(0,0,0,0.7);
+}
+
+/* ─── Stop List Overlay ─────────────────────────────────── */
+#stop-list-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+}
+
+#stop-list-panel {
+  width: 100%;
+  max-height: 75vh;
+  background: var(--card);
+  border-radius: var(--panel-radius) var(--panel-radius) 0 0;
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.stop-list-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  color: #fff;
+}
+
+#stop-list-items {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+
+.stop-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.stop-list-item:hover {
+  background: var(--card2);
+}
+
+.stop-list-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.stop-list-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stop-list-title-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stop-list-location {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stop-list-year {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  flex-shrink: 0;
+  max-width: 80px;
+}
+
+/* ─── Story Panel ────────────────────────────────────────── */
+#story-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1500;
+  max-height: 85vh;
+  background: var(--card);
+  border-radius: var(--panel-radius) var(--panel-radius) 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+}
+
+#story-panel.open {
+  transform: translateY(0);
+}
+
+/* Desktop: right sidebar */
+@media (min-width: 768px) {
+  #story-panel {
+    top: calc(var(--header-h) + var(--progress-h));
+    left: auto;
+    right: 0;
+    bottom: 0;
+    width: 420px;
+    max-height: none;
+    border-radius: 0;
+    border-top: none;
+    border-left: 1px solid var(--border);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  #story-panel.open {
+    transform: translateX(0);
+  }
+
+  /* Shrink map on desktop when panel is open */
+  #story-panel.open ~ #map,
+  body:has(#story-panel.open) #map {
+    right: 420px;
+  }
+}
+
+.panel-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  margin: 10px auto 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .panel-handle { display: none; }
+}
+
+#story-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 80px;
+}
+
+/* ─── Story Header ───────────────────────────────────────── */
+.story-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.story-stop-number {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.story-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+
+.story-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.story-year {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--red);
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.story-tagline {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #bbb;
+  font-style: italic;
+  margin-bottom: 12px;
+}
+
+/* Stat badges */
+.stop-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.stop-badge svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.stop-badge--death {
+  background: rgba(198, 12, 48, 0.12);
+  border: 1px solid rgba(198, 12, 48, 0.2);
+  color: #f4a2b0;
+}
+
+.stop-badge--reform {
+  background: rgba(45, 106, 79, 0.2);
+  border: 1px solid rgba(64, 145, 108, 0.3);
+  color: #74c69d;
+}
+
+/* ─── Story Sections ─────────────────────────────────────── */
+.story-sections {
+  padding: 0 20px;
+}
+
+.section-narrative {
+  margin: 20px 0;
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-narrative p {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #ccc;
+  margin-bottom: 12px;
+}
+
+.section-narrative p:last-child {
+  margin-bottom: 0;
+}
+
+/* Pull quote */
+.section-quote {
+  margin: 20px 0;
+  padding: 16px 20px;
+  border-left: 3px solid var(--red);
+  background: rgba(198, 12, 48, 0.06);
+  border-radius: 0 8px 8px 0;
+}
+
+.section-quote p {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.55;
+  color: #ddd;
+  margin-bottom: 8px;
+}
+
+.section-quote cite {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: normal;
+}
+
+/* Photo */
+.section-photo {
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.section-photo img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  max-height: 280px;
+}
+
+.section-photo--placeholder {
+  background: var(--card2);
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-placeholder-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.photo-placeholder-inner svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.5;
+}
+
+.photo-placeholder-inner span {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.photo-caption {
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.2);
+}
+
+/* Stat card */
+.section-stat {
+  margin: 20px 0;
+  padding: 14px 16px;
+  border-radius: 8px;
+}
+
+.section-stat.stat--red {
+  background: rgba(198, 12, 48, 0.1);
+  border: 1px solid rgba(198, 12, 48, 0.2);
+}
+
+.section-stat.stat--green {
+  background: rgba(45, 106, 79, 0.15);
+  border: 1px solid rgba(64, 145, 108, 0.25);
+}
+
+.section-stat.stat--gold {
+  background: rgba(212, 160, 23, 0.12);
+  border: 1px solid rgba(212, 160, 23, 0.25);
+}
+
+.stat-label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #ddd;
+}
+
+.section-stat.stat--red .stat-value  { color: #f4a2b0; }
+.section-stat.stat--green .stat-value { color: #74c69d; }
+.section-stat.stat--gold .stat-value  { color: #e9c46a; }
+
+/* Running total */
+.running-total {
+  margin: 28px 20px 12px;
+  padding: 14px 16px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.running-total-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.running-total-stats {
+  font-size: 13px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rt-deaths { color: #f4a2b0; font-weight: 500; }
+.rt-sep    { color: var(--border); }
+.rt-reforms { color: #74c69d; font-weight: 500; }
+
+/* ─── Story Nav ──────────────────────────────────────────── */
+#story-nav {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(14,14,14,0.97);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.nav-btn:not(:disabled):hover {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.nav-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.nav-btn-right {
+  background: var(--red-dark);
+  border-color: var(--red);
+  color: #fff;
+}
+
+.nav-btn-right:not(:disabled):hover {
+  background: var(--red);
+}
+
+#btn-close-story {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+#btn-close-story:hover {
+  color: var(--text);
+}
+
+/* ─── Near-Stop Toast ────────────────────────────────────── */
+#near-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2500;
+  transition: opacity 0.25s, transform 0.25s;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#near-toast.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#near-toast-inner {
+  background: var(--blue);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+#near-toast-inner button {
+  background: rgba(255,255,255,0.25);
+  border: none;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+#near-toast-inner button:hover {
+  background: rgba(255,255,255,0.4);
+}
+
+/* ─── Utilities ──────────────────────────────────────────── */
+.hidden {
+  display: none !important;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* ─── Map shrink when panel is open on desktop ───────────── */
+@media (min-width: 768px) {
+  #map {
+    transition: right 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  body.panel-open #map {
+    right: 420px;
+  }
+}
+
+/* ─── Landscape mobile tweaks ────────────────────────────── */
+@media (max-height: 500px) and (orientation: landscape) {
+  #story-panel {
+    max-height: 90vh;
+  }
+
+  .story-title {
+    font-size: 20px;
+  }
+}
