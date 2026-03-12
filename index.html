@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="A self-guided walking tour of Chicago's most tragic — and transformative — moments in history.">
-  <meta name="theme-color" content="#0f0f0f">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Death Tour">
+  <link rel="manifest" href="manifest.json">
   <title>Casey's Chicago Death Tour</title>
 
   <!-- Leaflet -->
@@ -14,13 +18,51 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Header -->
+  <!-- ─── Splash Screen ─────────────────────────────────── -->
+  <div id="splash">
+    <div class="splash-stripe"></div>
+    <div class="splash-body">
+      <div class="splash-stars">
+        <span>&#10022;</span><span>&#10022;</span><span>&#10022;</span><span>&#10022;</span>
+      </div>
+      <h1 class="splash-city">CHICAGO</h1>
+      <div class="splash-subtitle">DEATH TOUR</div>
+      <div class="splash-by">by Casey Hudetz</div>
+
+      <div class="splash-divider"></div>
+
+      <div class="splash-stats">
+        <div class="splash-stat">
+          <span class="splash-stat-num">10</span>
+          <span class="splash-stat-label">stops</span>
+        </div>
+        <span class="splash-stat-dot">·</span>
+        <div class="splash-stat">
+          <span class="splash-stat-num">1,854</span>
+          <span class="splash-stat-label">lives lost</span>
+        </div>
+        <span class="splash-stat-dot">·</span>
+        <div class="splash-stat">
+          <span class="splash-stat-num">8</span>
+          <span class="splash-stat-label">reforms</span>
+        </div>
+      </div>
+
+      <p class="splash-desc">A self-guided walking tour of Chicago's most tragic — and transformative — moments in history.</p>
+
+      <button class="splash-btn-primary" onclick="startTour()">Begin Tour</button>
+      <button class="splash-btn-secondary" onclick="closeSplash()">Explore the Map</button>
+    </div>
+    <div class="splash-stripe"></div>
+  </div>
+
+  <!-- ─── Header ───────────────────────────────────────── -->
   <header id="app-header">
     <div class="header-left">
       <div class="flag-stars">
@@ -37,21 +79,24 @@
     <div class="header-right">
       <button id="btn-gps" class="icon-btn" title="Find my location" aria-label="Find my location">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-          <path d="M12 2a10 10 0 1 0 10 10"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          <circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/>
         </svg>
       </button>
-      <button id="btn-list" class="icon-btn" title="Stop list" aria-label="View all stops" onclick="toggleStopList()">
+      <button class="icon-btn" title="All stops" aria-label="View all stops" onclick="toggleStopList()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-          <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
-          <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <circle cx="3.5" cy="6" r="1" fill="currentColor" stroke="none"/>
+          <circle cx="3.5" cy="12" r="1" fill="currentColor" stroke="none"/>
+          <circle cx="3.5" cy="18" r="1" fill="currentColor" stroke="none"/>
         </svg>
       </button>
     </div>
   </header>
 
-  <!-- Progress bar -->
+  <!-- ─── Progress Bar ─────────────────────────────────── -->
   <div id="progress-bar">
     <div id="progress-fill"></div>
     <div id="progress-stats">
@@ -60,50 +105,66 @@
     </div>
   </div>
 
-  <!-- Map -->
+  <!-- ─── Map ──────────────────────────────────────────── -->
   <div id="map"></div>
 
-  <!-- Stop list overlay -->
+  <!-- ─── Stop List Overlay ────────────────────────────── -->
   <div id="stop-list-overlay" class="hidden" onclick="if(event.target===this)toggleStopList()">
     <div id="stop-list-panel">
       <div class="panel-handle"></div>
-      <h2 class="stop-list-title">All Stops</h2>
+      <div class="stop-list-header">
+        <h2 class="stop-list-title">All Stops</h2>
+        <button class="stop-list-close" onclick="toggleStopList()">✕</button>
+      </div>
       <div id="stop-list-items"></div>
     </div>
   </div>
 
-  <!-- Story panel -->
+  <!-- ─── Story Panel ───────────────────────────────────── -->
   <div id="story-panel" class="hidden">
-    <div class="panel-handle" onclick="closeStoryPanel()"></div>
+    <div class="panel-handle" id="story-handle"></div>
 
     <div id="story-content">
       <!-- Populated by JS -->
     </div>
 
     <div id="story-nav">
-      <button id="btn-prev" class="nav-btn" onclick="navigateStop(-1)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button id="btn-prev" class="nav-btn" onclick="navigateStop(-1)" aria-label="Previous stop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="15 18 9 12 15 6"/>
         </svg>
         <span>Prev</span>
       </button>
-      <button id="btn-close-story" onclick="closeStoryPanel()">Close map</button>
-      <button id="btn-next" class="nav-btn nav-btn-right" onclick="navigateStop(1)">
-        <span>Next</span>
+      <button id="btn-close-story" class="nav-btn-map" onclick="closeStoryPanel()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        Map
+      </button>
+      <button id="btn-next" class="nav-btn nav-btn-right" onclick="navigateStop(1)" aria-label="Next stop">
+        <span id="btn-next-label">Next</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="9 18 15 12 9 6"/>
         </svg>
       </button>
     </div>
   </div>
 
-  <!-- Near-stop toast -->
+  <!-- ─── Near-Stop Toast ───────────────────────────────── -->
   <div id="near-toast" class="hidden">
     <div id="near-toast-inner">
-      <span id="near-toast-text">You're near Stop 1</span>
+      <div id="near-toast-content">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+          <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+        </svg>
+        <span id="near-toast-text">You're near Stop 1</span>
+      </div>
       <button onclick="openNearStop()">Open</button>
     </div>
   </div>
+
+  <!-- ─── Share Toast ───────────────────────────────────── -->
+  <div id="share-toast" class="hidden">Link copied!</div>
 
   <script src="js/stops.js"></script>
   <script src="js/app.js"></script>

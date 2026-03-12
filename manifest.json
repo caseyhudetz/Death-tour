@@ -1,0 +1,12 @@
+{
+  "name": "Casey's Chicago Death Tour",
+  "short_name": "Death Tour",
+  "description": "A self-guided walking tour of Chicago's most tragic — and transformative — moments in history.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "categories": ["travel", "education"],
+  "icons": []
+}
