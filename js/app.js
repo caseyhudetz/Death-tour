@@ -1,5 +1,5 @@
 // Casey's Chicago Death Tour — Application Logic
-// Two modes: long-scroll article (default) and walking tour map (overlay)
+// Unified experience: scroll drives map. Walking mode activates GPS.
 
 (function () {
   'use strict';
@@ -15,37 +15,37 @@
     outro:       '#0077b6'
   };
 
-  // ─── Mode Switching ───────────────────────────────────────────────────────────
-  let mapInitialized = false;
+  // ─── State ────────────────────────────────────────────────────────────────────
+  let map, routeLine;
+  let markers = [];
+  let activeStopIndex = null;
+  let nearStopIndex = null;
+  let gpsActive = false;
+  let watchId = null;
+  let userMarker = null;
+  let walkingMode = false;
+  let swipeBound = false;
+  let currentScrollIdx = -1;
+  let currentDeaths = 0;
+  let currentReforms = 0;
 
-  window.openMapMode = function () {
-    document.getElementById('scroll-view').classList.add('hidden');
-    document.getElementById('map-view').classList.remove('hidden');
-    document.body.classList.add('map-mode');
-    if (!mapInitialized) { initMap(); mapInitialized = true; }
-    else if (window._map) window._map.invalidateSize();
-  };
-
-  window.closeMapMode = function () {
-    document.getElementById('map-view').classList.add('hidden');
-    document.getElementById('scroll-view').classList.remove('hidden');
-    document.body.classList.remove('map-mode');
-  };
-
-  // ─── Scroll Article ───────────────────────────────────────────────────────────
-  function initScrollView() {
+  // ─── Boot ─────────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
     renderArticle();
-    buildChapterNav();
     initScrollObserver();
     initReadProgress();
+    initMap();
+    buildStopList();
+    bindGPSButton();
+    bindSwipeNavigation();
     handleURLHash();
-  }
+  });
 
-  // Render all chapters from TOUR_STOPS
+  // ─── Scroll Article ───────────────────────────────────────────────────────────
   function renderArticle() {
     const article = document.getElementById('article');
     TOUR_STOPS.forEach((stop, idx) => {
-      if (stop.theme === 'intro') return; // welcome is the hero
+      if (stop.theme === 'intro') return; // welcome becomes hero context
       const totals = RUNNING_TOTALS[idx];
       const section = document.createElement('section');
       section.className = `chapter chapter--${stop.theme}`;
@@ -54,6 +54,7 @@
       section.dataset.cumDeaths = totals.deaths;
       section.dataset.cumReforms = totals.reforms;
       section.dataset.title = stop.title;
+      section.dataset.year = stop.year;
       section.innerHTML = buildChapterHTML(stop, idx, totals);
       article.appendChild(section);
     });
@@ -61,10 +62,8 @@
 
   function buildChapterHTML(stop, idx, totals) {
     const color = THEME_COLORS[stop.theme] || '#C60C30';
-    const chapterNum = String(idx).padStart(2, '0'); // 01, 02, ...
-    const isOutro = stop.theme === 'outro';
+    const chapterNum = String(idx).padStart(2, '0');
 
-    // Image hero or color gradient hero
     const heroStyle = stop.image
       ? `background-image: url(${stop.image})`
       : `background: linear-gradient(135deg, ${color}22 0%, #080808 60%)`;
@@ -99,7 +98,6 @@
          </div>`
       : '';
 
-    // Walking directions link
     const mapsUrl = `https://maps.google.com/?q=${stop.lat},${stop.lng}`;
     const mapsLink = `<a href="${mapsUrl}" target="_blank" rel="noopener" class="ch-maps-link">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12">
@@ -136,9 +134,7 @@
             Share
           </button>
         </div>
-        <div class="ch-sections">
-          ${sectionsHTML}
-        </div>
+        <div class="ch-sections">${sectionsHTML}</div>
         ${buildTallyCard(totals, stop)}
         ${sourcesHTML}
       </div>`;
@@ -152,14 +148,12 @@
             ${section.heading ? `<h3 class="sec-heading">${section.heading}</h3>` : ''}
             ${section.body.split('\n\n').map(p => `<p>${p}</p>`).join('')}
           </div>`;
-
       case 'quote':
         return `
           <blockquote class="sec-quote" style="border-color:${accentColor}">
             <p>"${section.text}"</p>
             <cite>— ${section.attribution}</cite>
           </blockquote>`;
-
       case 'photo':
         if (section.image) {
           return `
@@ -179,7 +173,6 @@
             </div>
             ${section.caption ? `<figcaption>${section.caption}</figcaption>` : ''}
           </figure>`;
-
       case 'stat': {
         const cls = { red: 'sec-stat--red', green: 'sec-stat--green', gold: 'sec-stat--gold' }[section.color] || 'sec-stat--red';
         return `
@@ -205,74 +198,20 @@
       </div>`;
   }
 
-  // ─── Chapter Nav (sidebar dots) ───────────────────────────────────────────────
-  function buildChapterNav() {
-    const nav = document.getElementById('chapter-nav');
-    const chapters = TOUR_STOPS.filter(s => s.theme !== 'intro');
-    nav.innerHTML = chapters.map((stop, i) => {
-      const color = THEME_COLORS[stop.theme] || '#C60C30';
-      return `
-        <button class="cnav-dot" data-chapter="${stop.number}"
-                style="--dot-color:${color}"
-                onclick="scrollToChapter(${stop.number})"
-                title="${stop.title} (${stop.year})">
-          <span class="cnav-dot-inner"></span>
-          <span class="cnav-tooltip">${stop.title}</span>
-        </button>`;
-    }).join('');
-  }
-
-  window.scrollToChapter = function (num) {
-    const el = document.getElementById(`chapter-${num}`);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  window.scrollToArticle = function () {
-    document.getElementById('article').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  // ─── Intersection Observer — tally counter + header ──────────────────────────
-  let currentDeaths = 0;
-  let currentReforms = 0;
-  let headerVisible = false;
-
+  // ─── Scroll Observer — drives header, tally, AND map ─────────────────────────
   function initScrollObserver() {
-    // Tally updates when chapters scroll into view
-    const chapters = document.querySelectorAll('.chapter[data-cum-deaths]');
-    const tallyObserver = new IntersectionObserver(entries => {
+    const chapters = document.querySelectorAll('.chapter[data-idx]');
+
+    const chapterObserver = new IntersectionObserver(entries => {
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target;
-          const targetDeaths = parseInt(el.dataset.cumDeaths) || 0;
-          const targetReforms = parseInt(el.dataset.cumReforms) || 0;
-          const title = el.dataset.title || '';
-
-          // Update sticky header chapter label
-          const label = document.getElementById('sh-chapter-label');
-          if (label) label.textContent = title;
-
-          // Animate counters
-          animateCounter(
-            document.getElementById('sh-deaths-num'),
-            currentDeaths, targetDeaths, 900
-          );
-          animateCounter(
-            document.getElementById('sh-reforms-num'),
-            currentReforms, targetReforms, 900
-          );
-          currentDeaths = targetDeaths;
-          currentReforms = targetReforms;
-
-          // Highlight nav dot
-          document.querySelectorAll('.cnav-dot').forEach(d => d.classList.remove('active'));
-          const num = el.id.replace('chapter-', '');
-          const dot = document.querySelector(`.cnav-dot[data-chapter="${num}"]`);
-          if (dot) dot.classList.add('active');
-        }
+        if (!entry.isIntersecting) return;
+        const el = entry.target;
+        const idx = parseInt(el.dataset.idx);
+        onChapterVisible(idx, el);
       });
-    }, { threshold: 0.2, rootMargin: '-10% 0px -10% 0px' });
+    }, { threshold: 0.15, rootMargin: '-5% 0px -15% 0px' });
 
-    chapters.forEach(ch => tallyObserver.observe(ch));
+    chapters.forEach(ch => chapterObserver.observe(ch));
 
     // Show/hide sticky header after scrolling past hero
     const hero = document.getElementById('hero');
@@ -280,16 +219,51 @@
       const headerObserver = new IntersectionObserver(entries => {
         const header = document.getElementById('site-header');
         if (!header) return;
-        if (entries[0].isIntersecting) {
-          header.classList.remove('visible');
-        } else {
-          header.classList.add('visible');
-        }
+        header.classList.toggle('visible', !entries[0].isIntersecting);
       }, { threshold: 0 });
       headerObserver.observe(hero);
     }
   }
 
+  function onChapterVisible(idx, el) {
+    if (idx === currentScrollIdx) return;
+    currentScrollIdx = idx;
+
+    const stop = TOUR_STOPS[idx];
+    const totals = RUNNING_TOTALS[idx];
+
+    // Update sticky header
+    const label = document.getElementById('sh-chapter-label');
+    if (label) label.textContent = stop.title;
+
+    // Animate counters
+    animateCounter(document.getElementById('sh-deaths-num'), currentDeaths, totals.deaths, 900);
+    animateCounter(document.getElementById('sh-reforms-num'), currentReforms, totals.reforms, 900);
+    currentDeaths = totals.deaths;
+    currentReforms = totals.reforms;
+
+    // Light up flag stars
+    updateFlagStars(totals.reforms);
+
+    // Drive map (only when not in walking mode — walking mode is GPS-driven)
+    if (!walkingMode && map) {
+      map.flyTo([stop.lat, stop.lng], 16, { duration: 1.1, easeLinearity: 0.4 });
+      growRouteTo(idx);
+      refreshMarkerStates(idx, null);
+      updateMapLabel(stop);
+    }
+  }
+
+  // ─── Flag Stars Progress ──────────────────────────────────────────────────────
+  function updateFlagStars(reforms) {
+    // 8 total reforms → 4 stars. Light one per 2 reforms.
+    const lit = reforms >= 8 ? 4 : reforms >= 6 ? 3 : reforms >= 4 ? 2 : reforms >= 2 ? 1 : 0;
+    document.querySelectorAll('.sh-star').forEach((star, i) => {
+      star.classList.toggle('lit', i < lit);
+    });
+  }
+
+  // ─── Counter animation ────────────────────────────────────────────────────────
   function animateCounter(el, from, to, duration) {
     if (!el || from === to) { if (el) el.textContent = to.toLocaleString(); return; }
     const start = performance.now();
@@ -314,16 +288,17 @@
     }, { passive: true });
   }
 
+  // ─── Scroll helpers ───────────────────────────────────────────────────────────
+  window.scrollToArticle = function () {
+    document.getElementById('article').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   // ─── Share ────────────────────────────────────────────────────────────────────
   window.shareChapter = function (idx) {
     const stop = TOUR_STOPS[idx];
     const url = `${location.origin}${location.pathname}#chapter-${stop.number}`;
     if (navigator.share) {
-      navigator.share({
-        title: `Chicago Death Tour — ${stop.title}`,
-        text: stop.tagline,
-        url
-      }).catch(() => {});
+      navigator.share({ title: `Chicago Death Tour — ${stop.title}`, text: stop.tagline, url }).catch(() => {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(showShareToast);
     } else {
@@ -341,11 +316,10 @@
     }, 2200);
   }
 
-  // ─── URL hash handling ────────────────────────────────────────────────────────
+  // ─── URL hash ─────────────────────────────────────────────────────────────────
   function handleURLHash() {
     const hash = window.location.hash;
     if (!hash) return;
-    // Support both #chapter-N (scroll view) and #stop-N (map view)
     if (hash.startsWith('#chapter-')) {
       setTimeout(() => {
         const el = document.getElementById(hash.slice(1));
@@ -353,26 +327,19 @@
       }, 400);
     } else if (hash.startsWith('#stop-')) {
       const num = parseInt(hash.replace('#stop-', ''));
-      openMapMode();
       const idx = TOUR_STOPS.findIndex(s => s.number === num);
-      if (idx !== -1) setTimeout(() => openStop(idx), 400);
+      if (idx !== -1) setTimeout(() => openStop(idx), 600);
     }
   }
 
-  // ─── MAP MODE ─────────────────────────────────────────────────────────────────
-  let map;
-  let markers = [];
-  let activeStopIndex = null;
-  let nearStopIndex = null;
-  let gpsActive = false;
-  let watchId = null;
-  let userMarker = null;
-  let swipeBound = false;
+  // ═══════════════════════════════════════════════════════════
+  // MAP
+  // ═══════════════════════════════════════════════════════════
 
   function initMap() {
-    map = window._map = L.map('map', {
+    map = L.map('map', {
       center: [41.8870, -87.6310],
-      zoom: 15,
+      zoom: 14,
       zoomControl: false,
       attributionControl: false
     });
@@ -387,24 +354,25 @@
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    drawRoute();
-    addMarkers();
-    buildStopList();
-    bindGPSButton();
-    bindSwipeNavigation();
-  }
-
-  function drawRoute() {
-    const coords = TOUR_STOPS.map(s => [s.lat, s.lng]);
-    L.polyline(coords, {
-      color: '#C60C30', weight: 2, opacity: 0.4, dashArray: '6 10'
+    // Route line (grows as user scrolls)
+    routeLine = L.polyline([], {
+      color: '#C60C30', weight: 2.5, opacity: 0.7, dashArray: '6 10'
     }).addTo(map);
+
+    addMarkers();
   }
 
+  // ─── Route (grows with scroll progress) ──────────────────────────────────────
+  function growRouteTo(idx) {
+    const coords = TOUR_STOPS.slice(0, idx + 1).map(s => [s.lat, s.lng]);
+    routeLine.setLatLngs(coords);
+  }
+
+  // ─── Markers ──────────────────────────────────────────────────────────────────
   function addMarkers() {
     TOUR_STOPS.forEach((stop, idx) => {
       const marker = L.marker([stop.lat, stop.lng], {
-        icon: createMarkerIcon(stop, false),
+        icon: createMarkerIcon(stop, 'dim'),
         title: stop.title
       }).addTo(map);
       marker.on('click', () => openStop(idx));
@@ -412,25 +380,47 @@
     });
   }
 
-  function createMarkerIcon(stop, isActive) {
+  function createMarkerIcon(stop, state) {
+    // state: 'active' | 'visited' | 'dim'
     const color = THEME_COLORS[stop.theme] || '#C60C30';
+    const cls = [
+      'stop-marker',
+      state === 'active'  ? 'stop-marker--active'  : '',
+      state === 'visited' ? 'stop-marker--visited' : '',
+      state === 'dim'     ? 'stop-marker--dim'     : ''
+    ].join(' ').trim();
     return L.divIcon({
-      html: `<div class="stop-marker ${isActive ? 'stop-marker--active' : ''}" style="--marker-color:${color}">
-               <span>${stop.number}</span>
-             </div>`,
-      className: '', iconSize: [38, 38], iconAnchor: [19, 19]
+      html: `<div class="${cls}" style="--marker-color:${color}"><span>${stop.number}</span></div>`,
+      className: '', iconSize: [34, 34], iconAnchor: [17, 17]
     });
   }
 
-  function refreshMarkers() {
-    TOUR_STOPS.forEach((stop, idx) => {
-      markers[idx].setIcon(createMarkerIcon(stop, idx === activeStopIndex));
+  // activeIdx = currently highlighted by scroll; openIdx = currently open in story panel
+  function refreshMarkerStates(activeIdx, openIdx) {
+    TOUR_STOPS.forEach((stop, i) => {
+      let state;
+      if (i === openIdx || i === activeIdx) state = 'active';
+      else if (activeIdx !== null && i < activeIdx) state = 'visited';
+      else state = 'dim';
+      markers[i].setIcon(createMarkerIcon(stop, state));
     });
+  }
+
+  // ─── Map label ────────────────────────────────────────────────────────────────
+  function updateMapLabel(stop) {
+    const labelEl = document.getElementById('map-label');
+    const stopEl = document.getElementById('map-label-stop');
+    const yearEl = document.getElementById('map-label-year');
+    if (!labelEl) return;
+    stopEl.textContent = stop.title;
+    yearEl.textContent = stop.year;
+    labelEl.classList.add('visible');
   }
 
   // ─── Stop List ────────────────────────────────────────────────────────────────
   function buildStopList() {
     const container = document.getElementById('stop-list-items');
+    if (!container) return;
     container.innerHTML = TOUR_STOPS.map((stop, idx) => `
       <div class="stop-list-item" onclick="openStopFromList(${idx})">
         <div class="stop-list-num" style="background:${THEME_COLORS[stop.theme] || '#C60C30'}">${stop.number}</div>
@@ -452,14 +442,41 @@
     document.getElementById('stop-list-overlay').classList.toggle('hidden');
   };
 
-  // ─── Story Panel (map mode) ───────────────────────────────────────────────────
+  // ─── Walking Mode ─────────────────────────────────────────────────────────────
+  window.toggleWalkingMode = function () {
+    walkingMode = !walkingMode;
+    document.body.classList.toggle('walking-mode', walkingMode);
+    document.getElementById('btn-im-here').classList.toggle('active', walkingMode);
+
+    if (walkingMode) {
+      startGPS();
+      // Fit map to all stops so user can see everything
+      const bounds = L.latLngBounds(TOUR_STOPS.map(s => [s.lat, s.lng]));
+      map.fitBounds(bounds, { padding: [30, 30] });
+      refreshMarkerStates(null, null); // all dim until tapped
+    } else {
+      stopGPS();
+      closeStoryPanel();
+      // Return map to current scroll position
+      if (currentScrollIdx >= 0) {
+        const stop = TOUR_STOPS[currentScrollIdx];
+        map.flyTo([stop.lat, stop.lng], 16, { duration: 0.8 });
+        growRouteTo(currentScrollIdx);
+        refreshMarkerStates(currentScrollIdx, null);
+      }
+    }
+
+    setTimeout(() => map && map.invalidateSize(), 380);
+  };
+
+  // ─── Story Panel ──────────────────────────────────────────────────────────────
   function openStop(idx) {
     activeStopIndex = idx;
     const stop = TOUR_STOPS[idx];
     window.location.hash = `stop-${stop.number}`;
+
     map.flyTo([stop.lat, stop.lng], 17, { duration: 0.7 });
-    refreshMarkers();
-    updateMapProgress(idx);
+    refreshMarkerStates(currentScrollIdx, idx);
     renderStoryPanel(stop, idx);
     showStoryPanel();
   }
@@ -514,9 +531,7 @@
         <p class="story-tagline">${stop.tagline}</p>
         ${deathsBadge}${reformBadge}
       </div>
-      <div class="story-sections">
-        ${sectionsHTML}
-      </div>
+      <div class="story-sections">${sectionsHTML}</div>
       <div class="running-total">
         <div class="running-total-label">Tour total so far</div>
         <div class="running-total-stats">
@@ -539,8 +554,7 @@
     const stop = TOUR_STOPS[idx];
     const url = `${location.origin}${location.pathname}#stop-${stop.number}`;
     if (navigator.share) {
-      navigator.share({ title: `Chicago Death Tour — ${stop.title}`, text: stop.tagline, url })
-        .catch(() => {});
+      navigator.share({ title: `Chicago Death Tour — ${stop.title}`, text: stop.tagline, url }).catch(() => {});
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(showShareToast);
     } else {
@@ -553,19 +567,20 @@
     panel.classList.remove('hidden');
     requestAnimationFrame(() => {
       panel.classList.add('open');
-      document.body.classList.add('panel-open');
-      setTimeout(() => map.invalidateSize(), 320);
+      setTimeout(() => map && map.invalidateSize(), 340);
     });
   }
 
   window.closeStoryPanel = function () {
     const panel = document.getElementById('story-panel');
     panel.classList.remove('open');
-    document.body.classList.remove('panel-open');
-    setTimeout(() => { panel.classList.add('hidden'); map.invalidateSize(); }, 320);
+    setTimeout(() => {
+      panel.classList.add('hidden');
+      map && map.invalidateSize();
+    }, 340);
     activeStopIndex = null;
-    window.location.hash = '';
-    refreshMarkers();
+    if (!window.location.hash.startsWith('#chapter')) window.location.hash = '';
+    refreshMarkerStates(currentScrollIdx, null);
   };
 
   window.navigateStop = function (dir) {
@@ -574,21 +589,12 @@
     if (next >= 0 && next < TOUR_STOPS.length) openStop(next);
   };
 
-  function updateMapProgress(idx) {
-    const pct = ((idx + 1) / TOUR_STOPS.length) * 100;
-    document.getElementById('progress-fill').style.width = `${pct}%`;
-    const t = RUNNING_TOTALS[idx];
-    document.getElementById('stat-deaths').textContent =
-      t.deaths > 0 ? `${t.deaths.toLocaleString()} lives lost` : 'Tour begins';
-    document.getElementById('stat-reforms').textContent =
-      t.reforms > 0 ? `${t.reforms} reforms` : 'reforms ahead';
-  }
-
-  // ─── Swipe navigation (map mode story panel) ──────────────────────────────────
+  // ─── Swipe navigation ─────────────────────────────────────────────────────────
   function bindSwipeNavigation() {
     if (swipeBound) return;
     swipeBound = true;
     const content = document.getElementById('story-content');
+    if (!content) return;
     let sx = 0, sy = 0, sTop = 0;
     content.addEventListener('touchstart', e => {
       sx = e.touches[0].clientX;
@@ -607,7 +613,8 @@
 
   // ─── GPS ──────────────────────────────────────────────────────────────────────
   function bindGPSButton() {
-    document.getElementById('btn-gps').addEventListener('click', toggleGPS);
+    const btn = document.getElementById('btn-gps');
+    if (btn) btn.addEventListener('click', toggleGPS);
   }
 
   function toggleGPS() {
@@ -620,7 +627,8 @@
 
   function startGPS() {
     gpsActive = true;
-    document.getElementById('btn-gps').classList.add('gps-active');
+    const btn = document.getElementById('btn-gps');
+    if (btn) btn.classList.add('gps-active');
     watchId = navigator.geolocation.watchPosition(onGPSSuccess, onGPSError, {
       enableHighAccuracy: true, maximumAge: 5000, timeout: 15000
     });
@@ -628,9 +636,10 @@
 
   function stopGPS() {
     gpsActive = false;
-    document.getElementById('btn-gps').classList.remove('gps-active');
+    const btn = document.getElementById('btn-gps');
+    if (btn) btn.classList.remove('gps-active');
     if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-    if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+    if (userMarker && map) { map.removeLayer(userMarker); userMarker = null; }
     hideNearToast();
   }
 
@@ -643,7 +652,8 @@
     } else {
       userMarker.setLatLng([lat, lng]);
     }
-    map.panTo([lat, lng], { animate: true });
+    // Only pan to user in walking mode
+    if (walkingMode) map.panTo([lat, lng], { animate: true });
     checkProximity(lat, lng);
   }
 
@@ -651,6 +661,7 @@
     if (err.code === 1) {
       alert('Location access denied. Enable location permissions to use walking mode.');
       stopGPS();
+      if (walkingMode) toggleWalkingMode();
     }
   }
 
@@ -676,6 +687,7 @@
 
   function hideNearToast() {
     const t = document.getElementById('near-toast');
+    if (!t) return;
     t.classList.remove('visible');
     setTimeout(() => t.classList.add('hidden'), 300);
   }
@@ -694,14 +706,10 @@
 
   // ─── Keyboard ─────────────────────────────────────────────────────────────────
   document.addEventListener('keydown', e => {
-    if (!document.body.classList.contains('map-mode')) return;
     if (activeStopIndex === null) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigateStop(1);
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigateStop(-1);
     if (e.key === 'Escape') closeStoryPanel();
   });
-
-  // ─── Boot ─────────────────────────────────────────────────────────────────────
-  document.addEventListener('DOMContentLoaded', initScrollView);
 
 })();

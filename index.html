@@ -17,7 +17,7 @@
 
   <title>Casey's Chicago Death Tour</title>
 
-  <!-- Leaflet (for walking tour map mode) -->
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -28,178 +28,162 @@
 
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="scroll-mode">
+<body>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       SCROLL VIEW — Long-form article (default)
-       ═══════════════════════════════════════════════════════════ -->
-  <div id="scroll-view">
+  <!-- Reading progress bar -->
+  <div id="read-progress"><div id="read-progress-bar"></div></div>
 
-    <!-- Sticky site header (hidden until scroll) -->
-    <header id="site-header">
-      <div class="sh-brand">
-        <span class="sh-stars">&#10022;&#10022;&#10022;&#10022;</span>
-        <span class="sh-title">Chicago Death Tour</span>
-      </div>
-      <div id="sh-chapter-label"></div>
-      <div class="sh-right">
-        <div id="sh-tally">
-          <span id="sh-deaths-num">0</span>
-          <span class="sh-tally-label">lives lost</span>
-          <span class="sh-sep">·</span>
-          <span id="sh-reforms-num">0</span>
-          <span class="sh-tally-label">reforms</span>
+  <!-- ── Sticky site header ──────────────────────────────────────── -->
+  <header id="site-header">
+    <div class="sh-brand">
+      <div class="sh-flag">
+        <div class="sh-flag-stripe"></div>
+        <div class="sh-flag-stars">
+          <span class="sh-star" data-star="1">&#10022;</span>
+          <span class="sh-star" data-star="2">&#10022;</span>
+          <span class="sh-star" data-star="3">&#10022;</span>
+          <span class="sh-star" data-star="4">&#10022;</span>
         </div>
-        <button class="walk-mode-btn" onclick="openMapMode()">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
+        <div class="sh-flag-stripe"></div>
+      </div>
+      <span class="sh-title">Chicago Death Tour</span>
+    </div>
+    <div id="sh-chapter-label"></div>
+    <div class="sh-right">
+      <div id="sh-tally">
+        <span id="sh-deaths-num">0</span>
+        <span class="sh-tally-label">lives lost</span>
+        <span class="sh-sep">·</span>
+        <span id="sh-reforms-num">0</span>
+        <span class="sh-tally-label">reforms</span>
+      </div>
+      <button id="btn-im-here" class="im-here-btn" onclick="toggleWalkingMode()">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
+          <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+        </svg>
+        I'm Here
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Full-width hero ─────────────────────────────────────────── -->
+  <section id="hero">
+    <div class="hero-bg-overlay"></div>
+    <div class="hero-inner">
+      <div class="hero-flag-stripes">
+        <div class="hero-stripe"></div>
+        <div class="hero-stars-row">
+          <span>&#10022;</span><span>&#10022;</span><span>&#10022;</span><span>&#10022;</span>
+        </div>
+        <div class="hero-stripe"></div>
+      </div>
+
+      <div class="hero-headline">
+        <div class="hero-city">CHICAGO</div>
+        <div class="hero-tour">DEATH TOUR</div>
+      </div>
+
+      <div class="hero-by">by Casey Hudetz</div>
+      <div class="hero-divider"></div>
+
+      <div class="hero-totals">
+        <div class="hero-total-item">
+          <span class="hero-total-num">9</span>
+          <span class="hero-total-label">disasters</span>
+        </div>
+        <span class="hero-total-dot">·</span>
+        <div class="hero-total-item">
+          <span class="hero-total-num">1,854</span>
+          <span class="hero-total-label">lives lost</span>
+        </div>
+        <span class="hero-total-dot">·</span>
+        <div class="hero-total-item">
+          <span class="hero-total-num">8</span>
+          <span class="hero-total-label">reforms</span>
+        </div>
+      </div>
+
+      <p class="hero-desc">A self-guided walking tour of Chicago's most tragic —<br>and transformative — moments in history.</p>
+
+      <div class="hero-ctas">
+        <button class="hero-btn-primary" onclick="scrollToArticle()">Begin Reading</button>
+        <button class="hero-btn-secondary" onclick="toggleWalkingMode()">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
             <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
           </svg>
           Walking Tour
         </button>
       </div>
-    </header>
 
-    <!-- Reading progress bar -->
-    <div id="read-progress"><div id="read-progress-bar"></div></div>
+      <button class="hero-scroll-hint" onclick="scrollToArticle()" aria-label="Scroll down">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
+          <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+      </button>
+    </div>
+  </section>
 
-    <!-- ── Hero / Title Page ─────────────────────────────────── -->
-    <section id="hero">
-      <div class="hero-bg-overlay"></div>
-      <div class="hero-inner">
-        <div class="hero-flag-stripes">
-          <div class="hero-stripe"></div>
-          <div class="hero-stars-row">
+  <!-- ── Main split: narrative + persistent map ─────────────────── -->
+  <div id="split">
+
+    <!-- Left column: article scroll -->
+    <main id="narrative">
+      <article id="article"></article>
+
+      <section id="closing">
+        <div class="closing-flag">
+          <div class="closing-stripe"></div>
+          <div class="closing-stars">
             <span>&#10022;</span><span>&#10022;</span><span>&#10022;</span><span>&#10022;</span>
           </div>
-          <div class="hero-stripe"></div>
+          <div class="closing-stripe"></div>
         </div>
-
-        <div class="hero-headline">
-          <div class="hero-city">CHICAGO</div>
-          <div class="hero-tour">DEATH TOUR</div>
-        </div>
-
-        <div class="hero-by">by Casey Hudetz</div>
-        <div class="hero-divider"></div>
-
-        <div class="hero-totals">
-          <div class="hero-total-item">
-            <span class="hero-total-num">9</span>
-            <span class="hero-total-label">disasters</span>
+        <div class="closing-tally">
+          <div class="closing-stat">
+            <span class="closing-stat-num">1,854</span>
+            <span class="closing-stat-label">lives lost</span>
           </div>
-          <span class="hero-total-dot">·</span>
-          <div class="hero-total-item">
-            <span class="hero-total-num">1,854</span>
-            <span class="hero-total-label">lives lost</span>
+          <div class="closing-stat">
+            <span class="closing-stat-num">8</span>
+            <span class="closing-stat-label">major reforms</span>
           </div>
-          <span class="hero-total-dot">·</span>
-          <div class="hero-total-item">
-            <span class="hero-total-num">8</span>
-            <span class="hero-total-label">reforms</span>
+          <div class="closing-stat">
+            <span class="closing-stat-num">1</span>
+            <span class="closing-stat-label">city that learned</span>
           </div>
         </div>
-
-        <p class="hero-desc">A self-guided walking tour of Chicago's most tragic —<br>and transformative — moments in history.</p>
-
-        <div class="hero-ctas">
-          <button class="hero-btn-primary" onclick="scrollToArticle()">Begin Reading</button>
-          <button class="hero-btn-secondary" onclick="openMapMode()">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-              <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-            </svg>
-            Walking Tour
-          </button>
-        </div>
-
-        <button class="hero-scroll-hint" onclick="scrollToArticle()" aria-label="Scroll down">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22">
-            <path d="M12 5v14M5 12l7 7 7-7"/>
+        <p class="closing-quote">That's Chicago. It doesn't just rebuild. It builds better.</p>
+        <div class="closing-attribution">— Long live Chicago.</div>
+        <button class="closing-walk-btn" onclick="toggleWalkingMode()">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
           </svg>
+          Take the Walking Tour
         </button>
+      </section>
+    </main>
+
+    <!-- Right column: persistent map -->
+    <aside id="map-sidebar">
+      <div id="map"></div>
+
+      <!-- Map label (current chapter name) -->
+      <div id="map-label">
+        <span id="map-label-stop"></span>
+        <span id="map-label-year"></span>
       </div>
-    </section>
 
-    <!-- ── Article — chapters built by JS ────────────────────── -->
-    <article id="article"></article>
-
-    <!-- ── Closing Section ───────────────────────────────────── -->
-    <section id="closing">
-      <div class="closing-flag">
-        <div class="closing-stripe"></div>
-        <div class="closing-stars">
-          <span>&#10022;</span><span>&#10022;</span><span>&#10022;</span><span>&#10022;</span>
-        </div>
-        <div class="closing-stripe"></div>
-      </div>
-      <div class="closing-tally">
-        <div class="closing-stat">
-          <span class="closing-stat-num">1,854</span>
-          <span class="closing-stat-label">lives lost</span>
-        </div>
-        <div class="closing-stat">
-          <span class="closing-stat-num">8</span>
-          <span class="closing-stat-label">major reforms</span>
-        </div>
-        <div class="closing-stat">
-          <span class="closing-stat-num">1</span>
-          <span class="closing-stat-label">city that learned</span>
-        </div>
-      </div>
-      <p class="closing-quote">That's Chicago. It doesn't just rebuild. It builds better.</p>
-      <div class="closing-attribution">— Long live Chicago.</div>
-      <button class="closing-walk-btn" onclick="openMapMode()">
-        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
-          <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-        </svg>
-        Take the Walking Tour
-      </button>
-    </section>
-
-    <!-- ── Chapter Nav (desktop sidebar) ────────────────────── -->
-    <nav id="chapter-nav" aria-label="Chapter navigation">
-      <!-- Populated by JS -->
-    </nav>
-
-  </div><!-- /scroll-view -->
-
-
-  <!-- ═══════════════════════════════════════════════════════════
-       MAP VIEW — Walking tour (overlay, hidden by default)
-       ═══════════════════════════════════════════════════════════ -->
-  <div id="map-view" class="hidden">
-
-    <!-- Back button -->
-    <button id="map-back-btn" onclick="closeMapMode()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-        <polyline points="15 18 9 12 15 6"/>
-      </svg>
-      Back to Story
-    </button>
-
-    <!-- Map header -->
-    <header id="app-header">
-      <div class="header-left">
-        <div class="flag-stars">
-          <span class="flag-star">&#10022;</span>
-          <span class="flag-star">&#10022;</span>
-          <span class="flag-star">&#10022;</span>
-          <span class="flag-star">&#10022;</span>
-        </div>
-        <div class="header-text">
-          <span class="header-title">Chicago Death Tour</span>
-          <span class="header-sub">Walking Tour</span>
-        </div>
-      </div>
-      <div class="header-right">
-        <button id="btn-gps" class="icon-btn" title="Find my location" aria-label="Find my location">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- Map controls -->
+      <div id="map-controls">
+        <button id="btn-gps" class="map-ctrl-btn" title="Find my location" aria-label="Find my location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <circle cx="12" cy="12" r="3"/>
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
             <circle cx="12" cy="12" r="9" stroke-dasharray="4 2"/>
           </svg>
         </button>
-        <button class="icon-btn" title="All stops" aria-label="View all stops" onclick="toggleStopList()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <button id="btn-stop-list" class="map-ctrl-btn" title="All stops" aria-label="View all stops" onclick="toggleStopList()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
             <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
             <line x1="8" y1="18" x2="21" y2="18"/>
             <circle cx="3.5" cy="6" r="1" fill="currentColor" stroke="none"/>
@@ -208,74 +192,62 @@
           </svg>
         </button>
       </div>
-    </header>
 
-    <!-- Progress bar -->
-    <div id="progress-bar">
-      <div id="progress-fill"></div>
-      <div id="progress-stats">
-        <span id="stat-deaths">0 lives lost</span>
-        <span id="stat-reforms">0 reforms</span>
-      </div>
-    </div>
-
-    <!-- Map -->
-    <div id="map"></div>
-
-    <!-- Stop list overlay -->
-    <div id="stop-list-overlay" class="hidden" onclick="if(event.target===this)toggleStopList()">
-      <div id="stop-list-panel">
-        <div class="panel-handle"></div>
-        <div class="stop-list-header">
-          <h2 class="stop-list-title">All Stops</h2>
-          <button class="stop-list-close" onclick="toggleStopList()">✕</button>
+      <!-- Stop list panel -->
+      <div id="stop-list-overlay" class="hidden" onclick="if(event.target===this)toggleStopList()">
+        <div id="stop-list-panel">
+          <div class="panel-handle"></div>
+          <div class="stop-list-header">
+            <h2 class="stop-list-title">All Stops</h2>
+            <button class="stop-list-close" onclick="toggleStopList()">✕</button>
+          </div>
+          <div id="stop-list-items"></div>
         </div>
-        <div id="stop-list-items"></div>
       </div>
-    </div>
 
-    <!-- Story panel -->
-    <div id="story-panel" class="hidden">
-      <div class="panel-handle" id="story-handle"></div>
-      <div id="story-content"></div>
-      <div id="story-nav">
-        <button id="btn-prev" class="nav-btn" onclick="navigateStop(-1)" aria-label="Previous stop">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-          <span>Prev</span>
-        </button>
-        <button id="btn-close-story" class="nav-btn-map" onclick="closeStoryPanel()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>
-          </svg>
-          Map
-        </button>
-        <button id="btn-next" class="nav-btn nav-btn-right" onclick="navigateStop(1)" aria-label="Next stop">
-          <span id="btn-next-label">Next</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Near-stop toast -->
-    <div id="near-toast" class="hidden">
-      <div id="near-toast-inner">
-        <div id="near-toast-content">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
-          </svg>
-          <span id="near-toast-text">You're near a stop</span>
+      <!-- Near-stop toast -->
+      <div id="near-toast" class="hidden">
+        <div id="near-toast-inner">
+          <div id="near-toast-content">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+              <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+            </svg>
+            <span id="near-toast-text">You're near a stop</span>
+          </div>
+          <button onclick="openNearStop()">Open</button>
         </div>
-        <button onclick="openNearStop()">Open</button>
       </div>
+    </aside>
+
+  </div><!-- /split -->
+
+  <!-- ── Story panel (walking mode, fixed overlay) ──────────────── -->
+  <div id="story-panel" class="hidden">
+    <div class="panel-handle" id="story-handle"></div>
+    <div id="story-content"></div>
+    <div id="story-nav">
+      <button id="btn-prev" class="nav-btn" onclick="navigateStop(-1)" aria-label="Previous stop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        <span>Prev</span>
+      </button>
+      <button id="btn-close-story" class="nav-btn-map" onclick="closeStoryPanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        Map
+      </button>
+      <button id="btn-next" class="nav-btn nav-btn-right" onclick="navigateStop(1)" aria-label="Next stop">
+        <span id="btn-next-label">Next</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
     </div>
+  </div>
 
-  </div><!-- /map-view -->
-
-  <!-- Share toast (global) -->
+  <!-- Share toast -->
   <div id="share-toast" class="hidden">Link copied!</div>
 
   <script src="js/stops.js"></script>
